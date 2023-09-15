@@ -61,7 +61,7 @@ protobuf {
 }
 
 shadowJar {
-    // baseName = "AabResGuard"
+    archivesBaseName = "AabResGuard"
     version = versions[ARTIFACT_ID]
     // classifier = ''
 

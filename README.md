@@ -7,6 +7,10 @@
 
 [Download 0.1.11](https://github.com/Mercandj/AabResGuard/releases)
 
+- How to build the jar: `./gradlew core:shadowJar`
+- Jar output `./core/build/libs/AabResGuard-0.1.11-all.jar`
+- How to use it `java -jar ./AabResGuard-0.1.11-all.jar help` [cf wikia](wiki/en/COMMAND.md)
+
 [![License](https://img.shields.io/badge/license-Apache2.0-brightgreen)](LICENSE) [![Bundletool](https://img.shields.io/badge/Dependency-Bundletool/0.10.0-blue)](https://github.com/google/bundletool)
 
 **[English](README.md)** | [简体中文](wiki/zh-cn/README.md)
@@ -144,6 +148,7 @@ Read the details to learn how to participate in the improvement **AabResGuard**.
 * [Zhiqian Yang](https://github.com/yangzhiqian)
 * [Xiaoshuang Bai (Designer)](https://www.behance.net/shawnpai)
 * [Martinloren](https://github.com/martinloren)
+* [Mercandj](https://github.com/Mercandj)
 
 ## Thanks
 
