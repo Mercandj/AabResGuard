@@ -15,30 +15,30 @@
  */
 package com.bytedance.android.aabresguard.testing;
 
-import com.android.tools.build.bundletool.model.Aapt2Command;
+import com.android.tools.build.bundletool.androidtools.Aapt2Command;
 import com.google.common.collect.ObjectArrays;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-/** Helper for tests using aapt2. */
+/**
+ * Helper for tests using aapt2.
+ */
 public final class Aapt2Helper {
 
-  public static final String AAPT2_PATH =
-      System.getenv("AAPT2_PATH");
+    public static final String AAPT2_PATH = System.getenv("AAPT2_PATH");
 
-  public static Aapt2Command getAapt2Command() {
-    return Aapt2Command.createFromExecutablePath(Paths.get(AAPT2_PATH));
-  }
+    public static Aapt2Command getAapt2Command() {
+        return Aapt2Command.createFromExecutablePath(Paths.get(AAPT2_PATH));
+    }
 
-  public static void convertBinaryApkToProtoApk(Path binaryApk, Path protoApk) {
-    runAapt2(
-        "convert", "--output-format", "proto", "-o", protoApk.toString(), binaryApk.toString());
-  }
+    public static void convertBinaryApkToProtoApk(Path binaryApk, Path protoApk) {
+        // runAapt2("convert", "--output-format", "proto", "-o", protoApk.toString(), binaryApk.toString());
+        getAapt2Command().convertApkProtoToBinary(
+                protoApk, binaryApk, Aapt2Command.ConvertOptions.builder().build()
+        );
+    }
 
-  private static void runAapt2(String... command) {
-    new Aapt2Command.CommandExecutor().execute(ObjectArrays.concat(AAPT2_PATH, command));
-  }
-
-  private Aapt2Helper() {}
+    private Aapt2Helper() {
+    }
 }

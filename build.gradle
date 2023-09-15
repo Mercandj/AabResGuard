@@ -32,6 +32,7 @@ buildscript {
 allprojects {
     repositories {
         google()
+        mavenCentral()
         if ("true".equalsIgnoreCase(System.getProperty('useLocalMaven', "false"))) {
             mavenLocal()
         } else {

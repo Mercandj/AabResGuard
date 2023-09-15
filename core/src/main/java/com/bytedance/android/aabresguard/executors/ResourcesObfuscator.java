@@ -4,7 +4,21 @@ import com.android.aapt.Resources;
 import com.android.tools.build.bundletool.model.AppBundle;
 import com.android.tools.build.bundletool.model.BundleModule;
 import com.android.tools.build.bundletool.model.BundleModuleName;
-import com.android.tools.build.bundletool.model.InMemoryModuleEntry;
+
+import com.google.auto.value.AutoValue;
+import com.google.auto.value.AutoValue.CopyAnnotations;
+import com.google.common.base.Ascii;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.io.BaseEncoding;
+import com.google.common.io.ByteProcessor;
+import com.google.common.io.ByteSource;
+import com.google.errorprone.annotations.Immutable;
+import com.google.protobuf.ByteString;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
 import com.android.tools.build.bundletool.model.ModuleEntry;
 import com.android.tools.build.bundletool.model.ResourceTableEntry;
 import com.android.tools.build.bundletool.model.ZipPath;
@@ -22,16 +36,19 @@ import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -46,6 +63,7 @@ import static com.bytedance.android.aabresguard.bundle.ResourcesTableOperation.u
 import static com.bytedance.android.aabresguard.utils.FileOperation.getFilePrefixByFileName;
 import static com.bytedance.android.aabresguard.utils.FileOperation.getNameFromZipFilePath;
 import static com.bytedance.android.aabresguard.utils.FileOperation.getParentFromZipFilePath;
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Created by YangJing on 2019/10/14 .
@@ -74,7 +92,7 @@ public class ResourcesObfuscator {
         outputMappingPath = new File(outputLogLocationDir.toFile(), FILE_MAPPING_NAME).toPath();
         //checkFileDoesNotExist(outputMappingPath);
         if (Files.exists(outputMappingPath, new LinkOption[0])) {
-            logger.warning("Mapping file: "+outputMappingPath+" already existing! Deleting...");
+            logger.warning("Mapping file: " + outputMappingPath + " already existing! Deleting...");
             Files.delete(outputMappingPath);
         }
 
@@ -371,5 +389,187 @@ public class ResourcesObfuscator {
             }
         }
         return true;
+    }
+
+
+    public abstract static class InMemoryModuleEntry extends ModuleEntry {
+        public InMemoryModuleEntry() {
+        }
+
+        public abstract ZipPath getPath();
+
+        protected abstract ByteString getContentAsBytes();
+
+        public abstract boolean isDirectory();
+
+        public abstract boolean shouldCompress();
+
+        public ByteSource getContent() {
+            return new ByteArrayByteSource(this.getContentAsBytes().toByteArray());
+        }
+
+        public static InMemoryModuleEntry ofFile(String path, byte[] content) {
+            return ofFile(ZipPath.create(path), content);
+        }
+
+        public static InMemoryModuleEntry ofFile(ZipPath path, byte[] content) {
+            return new AutoValue_InMemoryModuleEntry(path, ByteString.copyFrom(content), false, true);
+        }
+
+        public static InMemoryModuleEntry ofFile(String path, byte[] content, boolean shouldCompress) {
+            return new AutoValue_InMemoryModuleEntry(ZipPath.create(path), ByteString.copyFrom(content), false, shouldCompress);
+        }
+
+        public static InMemoryModuleEntry ofDirectory(String path) {
+            return new AutoValue_InMemoryModuleEntry(ZipPath.create(path), ByteString.copyFrom(new byte[0]), true, true);
+        }
+    }
+
+
+    public static class ByteArrayByteSource extends ByteSource {
+
+        final byte[] bytes;
+        final int offset;
+        final int length;
+
+        ByteArrayByteSource(byte[] bytes) {
+            this(bytes, 0, bytes.length);
+        }
+
+        // NOTE: Preconditions are enforced by slice, the only non-trivial caller.
+        ByteArrayByteSource(byte[] bytes, int offset, int length) {
+            this.bytes = bytes;
+            this.offset = offset;
+            this.length = length;
+        }
+
+        @Override
+        public InputStream openStream() {
+            return new ByteArrayInputStream(bytes, offset, length);
+        }
+
+        @Override
+        public InputStream openBufferedStream() throws IOException {
+            return openStream();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return length == 0;
+        }
+
+        @Override
+        public long size() {
+            return length;
+        }
+
+        @Override
+        public com.google.common.base.Optional<Long> sizeIfKnown() {
+            return com.google.common.base.Optional.of((long) length);
+        }
+
+        @Override
+        public byte[] read() {
+            return Arrays.copyOfRange(bytes, offset, offset + length);
+        }
+
+        @SuppressWarnings("CheckReturnValue") // it doesn't matter what processBytes returns here
+        @Override
+        public <T> T read(ByteProcessor<T> processor) throws IOException {
+            processor.processBytes(bytes, offset, length);
+            return processor.getResult();
+        }
+
+        @Override
+        public long copyTo(OutputStream output) throws IOException {
+            output.write(bytes, offset, length);
+            return length;
+        }
+
+        @Override
+        public HashCode hash(HashFunction hashFunction) throws IOException {
+            return hashFunction.hashBytes(bytes, offset, length);
+        }
+
+        @Override
+        public ByteSource slice(long offset, long length) {
+            checkArgument(offset >= 0, "offset (%s) may not be negative", offset);
+            checkArgument(length >= 0, "length (%s) may not be negative", length);
+
+            offset = Math.min(offset, this.length);
+            length = Math.min(length, this.length - offset);
+            int newOffset = this.offset + (int) offset;
+            return new ByteArrayByteSource(bytes, newOffset, (int) length);
+        }
+
+        @Override
+        public String toString() {
+            return "ByteSource.wrap("
+                    + Ascii.truncate(BaseEncoding.base16().encode(bytes, offset, length), 30, "...")
+                    + ")";
+        }
+    }
+
+
+    public static class AutoValue_InMemoryModuleEntry extends InMemoryModuleEntry {
+        private final ZipPath getPath;
+        private final ByteString getContentAsBytes;
+        private final boolean isDirectory;
+        private final boolean shouldCompress;
+
+        public AutoValue_InMemoryModuleEntry(ZipPath getPath, ByteString getContentAsBytes, boolean isDirectory, boolean shouldCompress) {
+            if (getPath == null) {
+                throw new NullPointerException("Null getPath");
+            } else {
+                this.getPath = getPath;
+                if (getContentAsBytes == null) {
+                    throw new NullPointerException("Null getContentAsBytes");
+                } else {
+                    this.getContentAsBytes = getContentAsBytes;
+                    this.isDirectory = isDirectory;
+                    this.shouldCompress = shouldCompress;
+                }
+            }
+        }
+
+        public ZipPath getPath() {
+            return this.getPath;
+        }
+
+        @Override
+        public Optional<ModuleEntryLocationInZipSource> getFileLocation() {
+            return Optional.empty();
+        }
+
+        @Override
+        public boolean getForceUncompressed() {
+            return false;
+        }
+
+        @Override
+        public boolean getShouldSign() {
+            return false;
+        }
+
+        @Override
+        public Builder toBuilder() {
+            return null;
+        }
+
+        protected ByteString getContentAsBytes() {
+            return this.getContentAsBytes;
+        }
+
+        public boolean isDirectory() {
+            return this.isDirectory;
+        }
+
+        public boolean shouldCompress() {
+            return this.shouldCompress;
+        }
+
+        public String toString() {
+            return "InMemoryModuleEntry{getPath=" + this.getPath + ", getContentAsBytes=" + this.getContentAsBytes + ", isDirectory=" + this.isDirectory + ", shouldCompress=" + this.shouldCompress + "}";
+        }
     }
 }
