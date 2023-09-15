@@ -1,6 +1,22 @@
 **[English](CHANGELOG.md)** | [简体中文](../zh-cn/CHANGELOG.md)
 
 # Change log
+
+## 0.1.11
+- Bump: Bump to Gradle 8.3
+- Fix dependencies
+- Bump shadow java to 8.1.1
+- Bump bundletool to 1.15.4
+- From this repo https://github.com/Mercandj/AabResGuard
+
+## 0.1.10
+- Bump: Artic Fox Edition
+- From this repo: https://github.com/martinloren/AabResGuard
+- By martinloren
+
+## 0.1.9
+- Bytedance repo: https://github.com/bytedance/AabResGuard
+
 ## 0.1.6（2020/4/21）
 - Compatible wit `AGP-3.5.0`
 - Bugfix: `Fix get AGP version failed issue`

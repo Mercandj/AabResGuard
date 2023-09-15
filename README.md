@@ -5,7 +5,7 @@
   <p align="center" style="font-size: 0.3em">The tool of obfuscated aab resources</p>
 </h1>
 
-[Download V.0.1.10](https://github.com/martinloren/mvn-repo/raw/main/AabResGuard_0.1.10.zip)
+[Download 0.1.11](https://github.com/Mercandj/AabResGuard/releases)
 
 [![License](https://img.shields.io/badge/license-Apache2.0-brightgreen)](LICENSE) [![Bundletool](https://img.shields.io/badge/Dependency-Bundletool/0.10.0-blue)](https://github.com/google/bundletool)
 
@@ -51,7 +51,7 @@ buildscript {
     maven { url 'https://raw.githubusercontent.com/martinloren/AabResGuard/mvn-repo' }
    }
   dependencies {
-    classpath "com.bytedance.android:aabresguard-plugin:0.1.10"
+    classpath "com.bytedance.android:aabresguard-plugin:0.1.11"
   }
 }
 ```
