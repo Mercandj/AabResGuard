@@ -11,7 +11,7 @@
 - Jar output `./core/build/libs/AabResGuard-0.1.11-all.jar`
 - How to use it `java -jar ./AabResGuard-0.1.11-all.jar help` [cf wikia](wiki/en/COMMAND.md)
 
-[![License](https://img.shields.io/badge/license-Apache2.0-brightgreen)](LICENSE) [![Bundletool](https://img.shields.io/badge/Dependency-Bundletool/0.10.0-blue)](https://github.com/google/bundletool)
+[![License](https://img.shields.io/badge/license-Apache2.0-brightgreen)](LICENSE) [![Bundletool](https://img.shields.io/badge/Dependency-Bundletool/0.15.4-blue)](https://github.com/google/bundletool)
 
 **[English](README.md)** | [简体中文](wiki/zh-cn/README.md)
 
